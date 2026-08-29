@@ -2,8 +2,10 @@
  * Conexión a PostgreSQL (Railway).
  *
  * Usa la variable DATABASE_URL del archivo .env (ver .env.example).
- * Si la URL trae ?sslmode=require activa SSL con aceptación del certificado
- * propio de Railway; si no la trae, conecta sin SSL.
+ * Detecta si la URL exige SSL (por ?sslmode= o por ser host público de
+ * Railway *.rlwy.net) y conecta aceptando el certificado propio de Railway.
+ * El sslmode se extrae de la URL para que pg no lo reinterprete como
+ * verify-full (que rechazaría el certificado autofirmado).
  */
 import { Pool } from "pg";
 import dotenv from "dotenv";
@@ -18,9 +20,14 @@ if (!DATABASE_URL) {
   );
 }
 
-const useSSL = DATABASE_URL.includes("sslmode=require");
+const parsed = new URL(DATABASE_URL);
+const useSSL =
+  parsed.searchParams.get("sslmode") != null ||
+  parsed.hostname.endsWith(".rlwy.net");
+parsed.searchParams.delete("sslmode");
+parsed.searchParams.delete("sslrootcert");
 
 export const pool = new Pool({
-  connectionString: DATABASE_URL,
-  ...(useSSL ? { ssl: { rejectUnauthorized: false } } : {}),
+  connectionString: parsed.toString(),
+  ssl: useSSL ? { rejectUnauthorized: false } : undefined,
 });
