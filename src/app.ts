@@ -3,6 +3,7 @@ import cors from "cors";
 import authRoutes from "./routes/auth.routes";
 import walletRoutes from "./routes/wallet.routes";
 import balanceRoutes from "./routes/balance.routes";
+import transactionRoutes from "./routes/transaction.routes";
 
 
 const app = express();
@@ -21,5 +22,5 @@ app.get("/", (_req, res) => {
 
 app.use("/api/wallet", walletRoutes);
 app.use("/api/balances", balanceRoutes);
-
+app.use("/api/transactions", transactionRoutes);
 export default app;
