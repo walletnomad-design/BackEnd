@@ -11,7 +11,7 @@
     "test": "vitest run",
     "start": "tsx src/server.ts",
     "build": "tsc",
-    "dev": "tsx src/server.ts",
+    "dev": "tsx src/server.ts"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
