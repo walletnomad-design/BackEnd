@@ -3,11 +3,13 @@
   "version": "1.0.0",
   "description": "Backend de NomadWallet - Express + TypeScript + PostgreSQL",
   "private": true,
-  "main": "dist/index.js",
+  "main": "dist/server.js",
   "scripts": {
-    "db:migrate": "tsx src/db/migrate.ts",
+"db:migrate": "tsx src/db/migrate.ts",
     "db:check": "tsx src/db/check.ts",
     "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "start": "tsx src/server.ts",
     "build": "tsc",
     "dev": "tsx src/server.ts"
   },
