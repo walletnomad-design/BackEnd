@@ -5,6 +5,8 @@ import {
   login,
   EmailAlreadyExistsError,
   InvalidCredentialsError,
+  InvalidEmailError,
+  InvalidPasswordError,
 } from "../services/auth.service";
 
 export const registerUser = async (
@@ -26,6 +28,22 @@ export const registerUser = async (
 
     res.status(201).json(result);
   } catch (error) {
+    if (error instanceof InvalidEmailError) {
+      res.status(400).json({
+        error: "INVALID_EMAIL",
+        message: error.message,
+      });
+      return;
+    }
+
+    if (error instanceof InvalidPasswordError) {
+      res.status(400).json({
+        error: "INVALID_PASSWORD",
+        message: error.message,
+      });
+      return;
+    }
+
     if (error instanceof EmailAlreadyExistsError) {
       res.status(409).json({
         error: "EMAIL_ALREADY_EXISTS",

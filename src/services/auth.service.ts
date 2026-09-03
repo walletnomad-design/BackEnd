@@ -1,12 +1,18 @@
 import { hash, compare } from "bcrypt";
 
 import { findUserByEmail, createUser } from "../repositories/user.repository";
+
 import { createWalletForUser } from "../repositories/wallet.repository";
+
 import { createInitialBalances } from "../repositories/balance.repository";
+
 import { pool } from "../db/connection";
+
 import { generateToken } from "../utils/jwt";
 
 const SALT_ROUNDS = 10;
+
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export class EmailAlreadyExistsError extends Error {
   constructor() {
@@ -22,7 +28,23 @@ export class InvalidCredentialsError extends Error {
   }
 }
 
-export const hashPassword = async (password: string): Promise<string> => {
+export class InvalidEmailError extends Error {
+  constructor() {
+    super("Email inválido");
+    this.name = "InvalidEmailError";
+  }
+}
+
+export class InvalidPasswordError extends Error {
+  constructor() {
+    super("La contraseña debe tener al menos 8 caracteres");
+    this.name = "InvalidPasswordError";
+  }
+}
+
+export const hashPassword = async (
+  password: string
+): Promise<string> => {
   return hash(password, SALT_ROUNDS);
 };
 
@@ -34,6 +56,14 @@ export const comparePassword = async (
 };
 
 export const register = async (email: string, password: string) => {
+  if (!EMAIL_REGEX.test(email)) {
+    throw new InvalidEmailError();
+  }
+
+  if (password.length < 8) {
+    throw new InvalidPasswordError();
+  }
+
   const existingUser = await findUserByEmail(email);
 
   if (existingUser) {
@@ -41,6 +71,7 @@ export const register = async (email: string, password: string) => {
   }
 
   const passwordHash = await hashPassword(password);
+
   const client = await pool.connect();
 
   try {
@@ -81,7 +112,10 @@ export const login = async (email: string, password: string) => {
     throw new InvalidCredentialsError();
   }
 
-  const validPassword = await comparePassword(password, user.password);
+  const validPassword = await comparePassword(
+    password,
+    user.password
+  );
 
   if (!validPassword) {
     throw new InvalidCredentialsError();
