@@ -4,6 +4,7 @@ import authRoutes from "./routes/auth.routes";
 import walletRoutes from "./routes/wallet.routes";
 import balanceRoutes from "./routes/balance.routes";
 import transactionRoutes from "./routes/transaction.routes";
+import ratesRoutes from "./routes/rates.routes";
 
 
 const app = express();
@@ -12,6 +13,7 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/rates", ratesRoutes);
 
 // Ruta simple para comprobar que la API funciona
 app.get("/", (_req, res) => {
