@@ -55,7 +55,11 @@ export const comparePassword = async (
   return compare(password, hashedPassword);
 };
 
-export const register = async (email: string, password: string) => {
+export const register = async (
+  email: string,
+  password: string,
+  identity?: { firstName?: string; lastName?: string; dni?: string }
+) => {
   if (!EMAIL_REGEX.test(email)) {
     throw new InvalidEmailError();
   }
@@ -78,7 +82,7 @@ export const register = async (email: string, password: string) => {
     await client.query("BEGIN");
 
     const user = await createUser(
-      { email, password: passwordHash },
+      { email, password: passwordHash, ...identity },
       client
     );
 
@@ -95,6 +99,9 @@ export const register = async (email: string, password: string) => {
       user: {
         id: user.id,
         email: user.email,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        dni: user.dni,
       },
     };
   } catch (error) {
@@ -128,6 +135,9 @@ export const login = async (email: string, password: string) => {
     user: {
       id: user.id,
       email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      dni: user.dni,
     },
   };
 };
