@@ -77,3 +77,27 @@ CREATE TABLE IF NOT EXISTS transactions (
 -- Índices de búsqueda frecuente: findTransactionsByUserId y por wallet.
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions (user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions (wallet_id);
+
+-- Rate alerts / Alertas de tasa (Sprint 2 · P2).
+-- El usuario pide "avisame cuando 1 USD sea >= 0.90 EUR":
+--   from_currency (base) -> to_currency (destino), con un umbral (threshold)
+--   y una dirección (condition): 'gte' = la tasa llega o supera el umbral,
+--   'lte' = la tasa baja hasta el umbral o menos.
+-- `status` es una mini-máquina de estados: active -> triggered (fired una vez);
+-- el usuario puede rearmarla (volver a 'active') desde el servicio.
+-- `evaluateRateAlerts` la marca como triggered cuando se cumple; el envío
+-- del aviso (email/socket) queda para la capa de P3/P1.
+CREATE TABLE IF NOT EXISTS rate_alerts (
+  id            SERIAL PRIMARY KEY,
+  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  from_currency VARCHAR(3) NOT NULL CHECK (from_currency IN ('USD','EUR','COP')),
+  to_currency   VARCHAR(3) NOT NULL CHECK (to_currency IN ('USD','EUR','COP')),
+  threshold     NUMERIC(18,6) NOT NULL CHECK (threshold > 0),
+  condition     VARCHAR(3) NOT NULL DEFAULT 'gte' CHECK (condition IN ('gte','lte')),
+  status        VARCHAR(10) NOT NULL DEFAULT 'active' CHECK (status IN ('active','triggered')),
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_rate_alerts_diff_currencies CHECK (from_currency <> to_currency)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_alerts_user_id ON rate_alerts (user_id);
