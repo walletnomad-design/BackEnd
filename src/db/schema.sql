@@ -51,23 +51,27 @@ CREATE TABLE IF NOT EXISTS balances (
 -- Índice de búsqueda frecuente: findBalancesByWalletId, GET /api/balances.
 CREATE INDEX IF NOT EXISTS idx_balances_wallet_id ON balances (wallet_id);
 
--- Transactions: modelo Sprint 2 (contrato maestro de P3).
--- Guarda por operación lo que exige el contrato: usuario, tipo, moneda
--- origen, moneda destino, monto origen, monto destino, tasa utilizada,
--- estado y fecha. El frontend no crea transacciones libres: se generan
--- automáticamente al completarse una compra/venta/intercambio (exchange).
+-- Transactions: modelo Sprint 2 (contrato maestro de P3), ADITIVO sobre Sprint 1.
+-- Contrato maestro: `currency` = moneda origen, `amount` = monto origen,
+-- `type` = tipo de operación (buy | sell | exchange). Se CONSERVAN esas
+-- columnas y solo se AGREGAN las que faltan para el Sprint 2:
+--   to_currency (moneda destino), to_amount (monto destino), rate (tasa),
+--   status (estado). Las columnas nuevas son NULLABLE a propósito para no
+-- romper el historial de Sprint 1 (las operaciones viejas no las tenían).
+-- El frontend no crea transacciones libres: se generan automáticamente al
+-- completarse una compra/venta/intercambio (exchange).
 CREATE TABLE IF NOT EXISTS transactions (
-  id            SERIAL PRIMARY KEY,
-  user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-  wallet_id     INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
-  type          VARCHAR(20) NOT NULL,                            -- buy | sell | exchange
-  from_currency VARCHAR(3)  NOT NULL CHECK (from_currency IN ('USD','EUR','COP')),
-  to_currency   VARCHAR(3)  NOT NULL CHECK (to_currency IN ('USD','EUR','COP')),
-  from_amount   NUMERIC(18,2) NOT NULL,
-  to_amount     NUMERIC(18,2) NOT NULL,
-  rate          NUMERIC(18,6) NOT NULL,                          -- tasa aplicada from -> to
-  status        VARCHAR(20) NOT NULL DEFAULT 'completed',        -- completed | failed
-  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  id          SERIAL PRIMARY KEY,
+  user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  wallet_id   INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
+  type        VARCHAR(20) NOT NULL,                              -- buy | sell | exchange
+  currency    VARCHAR(3)  NOT NULL CHECK (currency IN ('USD','EUR','COP')), -- moneda origen
+  amount      NUMERIC(18,2) NOT NULL,                            -- monto origen
+  to_currency VARCHAR(3)  CHECK (to_currency IN ('USD','EUR','COP')),   -- moneda destino
+  to_amount   NUMERIC(18,2),                                     -- monto destino
+  rate        NUMERIC(18,6),                                     -- tasa aplicada origen -> destino
+  status      VARCHAR(20) NOT NULL DEFAULT 'completed',          -- completed | failed
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Índices de búsqueda frecuente: findTransactionsByUserId y por wallet.

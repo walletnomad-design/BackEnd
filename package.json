@@ -6,6 +6,7 @@
   "main": "dist/server.js",
   "scripts": {
     "db:migrate": "tsx src/db/migrate.ts",
+    "db:alter": "tsx src/db/alter.ts",
     "db:check": "tsx src/db/check.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",

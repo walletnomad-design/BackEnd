@@ -145,9 +145,9 @@ describe("transaction.repository", () => {
   it("findTransactionsByUserId devuelve las transacciones del usuario", async () => {
     await db.query(
       `INSERT INTO transactions
-         (user_id, wallet_id, type, from_currency, to_currency, from_amount, to_amount, rate, status)
+         (user_id, wallet_id, type, currency, amount, to_currency, to_amount, rate, status)
        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-      [2, 2, "exchange", "USD", "EUR", 100, 93, 0.93, "completed"]
+      [2, 2, "exchange", "USD", 100, "EUR", 93, 0.93, "completed"]
     );
     const tx = await findTransactionsByUserId(2, db);
     const last = tx[0];
