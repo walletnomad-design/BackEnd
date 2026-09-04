@@ -7,9 +7,9 @@ interface TransactionRow {
   user_id: number;
   wallet_id: number;
   type: string;
-  from_currency: Currency;
+  currency: Currency;
   to_currency: Currency;
-  from_amount: number;
+  amount: number;
   to_amount: number;
   rate: number;
   status: string;
@@ -21,9 +21,9 @@ const toTransaction = (row: TransactionRow): Transaction => ({
   userId: row.user_id,
   walletId: row.wallet_id,
   type: row.type as Transaction["type"],
-  fromCurrency: row.from_currency,
+  fromCurrency: row.currency,
   toCurrency: row.to_currency,
-  fromAmount: row.from_amount,
+  fromAmount: row.amount,
   toAmount: row.to_amount,
   rate: row.rate,
   status: row.status as Transaction["status"],
@@ -36,19 +36,19 @@ export const createTransaction = async (
 ): Promise<Transaction> => {
   const result = await db.query<TransactionRow>(
     `INSERT INTO transactions
-       (user_id, wallet_id, type, from_currency, to_currency, from_amount, to_amount, rate, status)
+       (user_id, wallet_id, type, currency, amount, to_currency, to_amount, rate, status)
      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING id, user_id, wallet_id, type,
-               from_currency, to_currency,
-               from_amount::float8 AS from_amount, to_amount::float8 AS to_amount,
+               currency, to_currency,
+               amount::float8 AS amount, to_amount::float8 AS to_amount,
                rate::float8 AS rate, status, created_at`,
     [
       data.userId,
       data.walletId,
       data.type,
       data.fromCurrency,
-      data.toCurrency,
       data.fromAmount,
+      data.toCurrency,
       data.toAmount,
       data.rate,
       data.status,
@@ -63,8 +63,8 @@ export const findTransactionsByUserId = async (
 ): Promise<Transaction[]> => {
   const result = await db.query<TransactionRow>(
     `SELECT id, user_id, wallet_id, type,
-            from_currency, to_currency,
-            from_amount::float8 AS from_amount, to_amount::float8 AS to_amount,
+            currency, to_currency,
+            amount::float8 AS amount, to_amount::float8 AS to_amount,
             rate::float8 AS rate, status, created_at
      FROM transactions
      WHERE user_id = $1
