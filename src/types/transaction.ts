@@ -1,19 +1,30 @@
 import type { Currency } from "./currency";
 
+export type TransactionType = "buy" | "sell" | "exchange";
+export type TransactionStatus = "completed" | "failed";
+
 export interface Transaction {
   id: number;
   userId: number;
   walletId: number;
-  currency: Currency;
-  amount: number;
-  type: string;
+  type: TransactionType;
+  fromCurrency: Currency;
+  toCurrency: Currency;
+  fromAmount: number;
+  toAmount: number;
+  rate: number;
+  status: TransactionStatus;
   createdAt: string;
 }
 
-export interface NewTransactionInput {
+export interface CreateTransactionInput {
   userId: number;
   walletId: number;
-  currency: Currency;
-  amount: number;
-  type: string;
+  type: TransactionType;
+  fromCurrency: Currency;
+  toCurrency: Currency;
+  fromAmount: number;
+  toAmount: number;
+  rate: number;
+  status: TransactionStatus;
 }

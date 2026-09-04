@@ -60,3 +60,62 @@ export const findBalancesByWalletId = async (
   );
   return result.rows.map(toBalance);
 };
+
+/**
+ * Saldo de una moneda concreta de una wallet, con FOR UPDATE para
+ * bloquear la fila dentro de una transacción (evita condiciones de carrera
+ * al debitar/acreditar en el exchange).
+ */
+export const getBalanceByWalletAndCurrency = async (
+  walletId: number,
+  currency: Currency,
+  db: Queryable = pool
+): Promise<Balance | null> => {
+  const result = await db.query<BalanceRow>(
+    `SELECT id, wallet_id, currency, amount::float8 AS amount, created_at, updated_at
+     FROM balances
+     WHERE wallet_id = $1 AND currency = $2
+     FOR UPDATE`,
+    [walletId, currency]
+  );
+  return result.rows[0] ? toBalance(result.rows[0]) : null;
+};
+
+/**
+ * Suma `delta` (positivo = acredita, negativo = debita) al saldo de una
+ * moneda de la wallet. Devuelve el saldo resultante.
+ *
+ * - delta positivo: UPSERT (crea la fila si no existe). El valor insertado es
+ *   positivo y no viola el CHECK (amount >= 0).
+ * - delta negativo: UPDATE directo sobre la fila existente (el débito requiere
+ *   que la fila exista, lo que el exchange ya garantiza con getBalance).
+ *
+ * Usa la transacción del exchange para ser atómico.
+ */
+export const addToBalance = async (
+  walletId: number,
+  currency: Currency,
+  delta: number,
+  db: Queryable = pool
+): Promise<Balance> => {
+  if (delta < 0) {
+    const result = await db.query<BalanceRow>(
+      `UPDATE balances
+       SET amount = amount + $3, updated_at = NOW()
+       WHERE wallet_id = $1 AND currency = $2
+       RETURNING id, wallet_id, currency, amount::float8 AS amount, created_at, updated_at`,
+      [walletId, currency, delta]
+    );
+    return toBalance(result.rows[0]);
+  }
+
+  const result = await db.query<BalanceRow>(
+    `INSERT INTO balances (wallet_id, currency, amount)
+     VALUES ($1, $2, $3)
+     ON CONFLICT (wallet_id, currency)
+     DO UPDATE SET amount = balances.amount + EXCLUDED.amount, updated_at = NOW()
+     RETURNING id, wallet_id, currency, amount::float8 AS amount, created_at, updated_at`,
+    [walletId, currency, delta]
+  );
+  return toBalance(result.rows[0]);
+};
