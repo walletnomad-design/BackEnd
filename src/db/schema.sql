@@ -10,10 +10,18 @@
 -- =============================================================
 
 -- Usuarios: email único, password con hash (lo genera auth de P3).
+-- nombre/apellido/DNI: identificación del titular (acuerdo del equipo, 03/09/2026).
+-- Son nullable para no romper los usuarios ya creados en Railway y para que
+-- createUser({email, password}) de tests siga funcionando; el registro nuevo
+-- (frontend) debe enviarlos.
+-- dni UNIQUE: identificación, no puede repetirse.
 CREATE TABLE IF NOT EXISTS users (
   id         SERIAL PRIMARY KEY,
   email      VARCHAR(255) NOT NULL UNIQUE,
   password   VARCHAR(255) NOT NULL,
+  first_name VARCHAR(120),
+  last_name  VARCHAR(120),
+  dni        VARCHAR(20)  UNIQUE,
   created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
