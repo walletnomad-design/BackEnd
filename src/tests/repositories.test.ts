@@ -10,6 +10,7 @@ import {
   createInitialBalances,
   findWalletByUserId,
   findBalancesByWalletId,
+  createTransaction,
   findTransactionsByUserId,
 } from "../repositories";
 
@@ -116,17 +117,47 @@ describe("transaction.repository", () => {
     expect(await findTransactionsByUserId(1, db)).toEqual([]);
   });
 
+  it("createTransaction crea una transacción con el modelo del contrato", async () => {
+    const created = await createTransaction(
+      {
+        userId: 2,
+        walletId: 2,
+        type: "exchange",
+        fromCurrency: "USD",
+        toCurrency: "EUR",
+        fromAmount: 100,
+        toAmount: 93,
+        rate: 0.93,
+        status: "completed",
+      },
+      db
+    );
+    expect(created.id).toBeGreaterThan(0);
+    expect(created.type).toBe("exchange");
+    expect(created.fromCurrency).toBe("USD");
+    expect(created.toCurrency).toBe("EUR");
+    expect(created.fromAmount).toBe(100);
+    expect(created.toAmount).toBe(93);
+    expect(created.rate).toBe(0.93);
+    expect(created.status).toBe("completed");
+  });
+
   it("findTransactionsByUserId devuelve las transacciones del usuario", async () => {
     await db.query(
-      `INSERT INTO transactions (user_id, wallet_id, currency, amount, type)
-       VALUES ($1, $2, $3, $4, $5)`,
-      [2, 2, "USD", 150.5, "exchange"]
+      `INSERT INTO transactions
+         (user_id, wallet_id, type, from_currency, to_currency, from_amount, to_amount, rate, status)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+      [2, 2, "exchange", "USD", "EUR", 100, 93, 0.93, "completed"]
     );
     const tx = await findTransactionsByUserId(2, db);
-    expect(tx).toHaveLength(1);
-    expect(tx[0]?.type).toBe("exchange");
-    expect(tx[0]?.userId).toBe(2);
-    expect(tx[0]?.walletId).toBe(2);
-    expect(typeof tx[0]?.amount).toBe("number");
+    const last = tx[0];
+    expect(tx.length).toBeGreaterThan(0);
+    expect(last?.type).toBe("exchange");
+    expect(last?.userId).toBe(2);
+    expect(last?.walletId).toBe(2);
+    expect(typeof last?.fromAmount).toBe("number");
+    expect(typeof last?.toAmount).toBe("number");
+    expect(last?.fromCurrency).toBe("USD");
+    expect(last?.toCurrency).toBe("EUR");
   });
 });
