@@ -11,3 +11,11 @@ export {
   createTransaction,
   findTransactionsByUserId,
 } from "./transaction.repository";
+export {
+  createRateAlert,
+  findRateAlertsByUserId,
+  findActiveRateAlertsByUserId,
+  markRateAlertTriggered,
+  reactivateRateAlert,
+  deleteRateAlert,
+} from "./rate-alert.repository";
