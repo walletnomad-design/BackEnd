@@ -19,6 +19,7 @@ export {
   reactivateRateAlert,
   deleteRateAlert,
 } from "./rate-alert.repository";
+export {
   createGoal,
   findGoalsByUserId,
   findGoalById,
