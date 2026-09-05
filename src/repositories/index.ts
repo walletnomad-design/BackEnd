@@ -19,3 +19,9 @@ export {
   reactivateRateAlert,
   deleteRateAlert,
 } from "./rate-alert.repository";
+  createGoal,
+  findGoalsByUserId,
+  findGoalById,
+  addToGoalAmount,
+  deleteGoal,
+} from "./goal.repository";

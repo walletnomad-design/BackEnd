@@ -101,3 +101,23 @@ CREATE TABLE IF NOT EXISTS rate_alerts (
 );
 
 CREATE INDEX IF NOT EXISTS idx_rate_alerts_user_id ON rate_alerts (user_id);
+-- Goals / Metas de viaje (Sprint 2 · Etapa 3 — P2).
+-- Cada meta pertenece a un usuario (user_id) y se define en UNA moneda del
+-- contrato (USD/EUR/COP) con un monto objetivo (target_amount > 0).
+-- current_amount guarda cuánto lleva ahorrado hacia la meta; el progreso
+-- (progreso/completada) se calcula en la capa de servicio, no se almacena,
+-- evitando estados inconsistentes. El historial de aportes y la asignación
+-- desde balances reales quedan para etapas posteriores (a coordinar).
+CREATE TABLE IF NOT EXISTS goals (
+  id             SERIAL PRIMARY KEY,
+  user_id        INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  name           VARCHAR(120) NOT NULL,
+  currency       VARCHAR(3)  NOT NULL CHECK (currency IN ('USD','EUR','COP')),
+  target_amount  NUMERIC(18,2) NOT NULL CHECK (target_amount > 0),
+  current_amount NUMERIC(18,2) NOT NULL DEFAULT 0 CHECK (current_amount >= 0),
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Índice de búsqueda frecuente: listGoalsByUserId, GET /api/goals.
+CREATE INDEX IF NOT EXISTS idx_goals_user_id ON goals (user_id);
