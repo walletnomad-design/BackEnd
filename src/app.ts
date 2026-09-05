@@ -6,6 +6,9 @@ import balanceRoutes from "./routes/balance.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import ratesRoutes from "./routes/rates.routes";
 import exchangeRoutes from "./routes/exchange.routes";
+import goalRoutes from "./routes/goal.routes";
+import rateAlertRoutes from "./routes/rate-alert.routes";
+
 
 const app = express();
 
@@ -26,4 +29,10 @@ app.use("/api/exchange", exchangeRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/balances", balanceRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/goals", goalRoutes);
+app.use("/api/rate-alerts", rateAlertRoutes);
+
+
+
+
 export default app;
