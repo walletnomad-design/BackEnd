@@ -8,3 +8,4 @@ export * from "./user";
 export * from "./wallet";
 export * from "./rates";
 export * from "./rateAlert";
+export * from "./operationEmail";
