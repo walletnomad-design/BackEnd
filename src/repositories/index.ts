@@ -1,4 +1,4 @@
-export { findUserByEmail, createUser } from "./user.repository";
+export { findUserByEmail, findUserById, createUser } from "./user.repository";
 
 export {
   createWalletForUser,
