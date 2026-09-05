@@ -11,3 +11,10 @@ export {
   createTransaction,
   findTransactionsByUserId,
 } from "./transaction.repository";
+export {
+  createGoal,
+  findGoalsByUserId,
+  findGoalById,
+  addToGoalAmount,
+  deleteGoal,
+} from "./goal.repository";
