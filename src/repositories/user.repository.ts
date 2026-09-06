@@ -33,6 +33,17 @@ export const findUserByEmail = async (
   return result.rows[0] ? toUser(result.rows[0]) : null;
 };
 
+export const findUserById = async (
+  id: number,
+  db: Queryable = pool
+): Promise<User | null> => {
+  const result = await db.query<UserRow>(
+    "SELECT id, email, password, first_name, last_name, dni, created_at FROM users WHERE id = $1",
+    [id]
+  );
+  return result.rows[0] ? toUser(result.rows[0]) : null;
+};
+
 export const createUser = async (
   data: CreateUserInput,
   db: Queryable = pool
