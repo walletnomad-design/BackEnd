@@ -6,9 +6,14 @@ if (!JWT_SECRET) {
   throw new Error("Falta la variable JWT_SECRET");
 }
 
-export const generateToken = (userId: number): string => {
+export type UserRole = "user" | "admin";
+
+export const generateToken = (
+  userId: number,
+  role: UserRole = "user"
+): string => {
   return sign(
-    { userId },
+    { userId, role },
     JWT_SECRET,
     { expiresIn: "1h" }
   );

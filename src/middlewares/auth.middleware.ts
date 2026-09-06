@@ -1,5 +1,5 @@
 import type { Request, Response, NextFunction } from "express";
-import { verifyToken } from "../utils/jwt";
+import { verifyToken, type UserRole } from "../utils/jwt";
 
 export const requireAuth = (
   req: Request,
@@ -29,7 +29,12 @@ export const requireAuth = (
       return;
     }
 
+    const role: UserRole =
+      decoded.role === "admin" ? "admin" : "user";
+
     res.locals.userId = decoded.userId;
+    res.locals.role = role;
+
     next();
   } catch {
     res.status(401).json({
@@ -37,4 +42,20 @@ export const requireAuth = (
       message: "Token inválido",
     });
   }
+};
+
+export const requireAdmin = (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): void => {
+  if (res.locals.role !== "admin") {
+    res.status(403).json({
+      error: "FORBIDDEN",
+      message: "Acceso exclusivo para administradores",
+    });
+    return;
+  }
+
+  next();
 };
