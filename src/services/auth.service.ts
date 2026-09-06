@@ -37,10 +37,21 @@ export class InvalidEmailError extends Error {
 
 export class InvalidPasswordError extends Error {
   constructor() {
-    super("La contraseña debe tener al menos 8 caracteres");
+    super("La contraseña debe tener al menos 8 caracteres, con letras y números");
     this.name = "InvalidPasswordError";
   }
 }
+
+/**
+ * Regla de contraseña: mínimo 8 caracteres, alfanumérica de verdad
+ * (al menos una letra Y al menos un número), alineada con el frontend.
+ */
+const isValidPassword = (password: string): boolean => {
+  const hasMinLength = password.length >= 8;
+  const hasLetter = /[a-zA-Z]/.test(password);
+  const hasNumber = /[0-9]/.test(password);
+  return hasMinLength && hasLetter && hasNumber;
+};
 
 export const hashPassword = async (
   password: string
@@ -64,7 +75,7 @@ export const register = async (
     throw new InvalidEmailError();
   }
 
-  if (password.length < 8) {
+  if (!isValidPassword(password)) {
     throw new InvalidPasswordError();
   }
 
