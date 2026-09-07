@@ -4,7 +4,10 @@
  * Aplica, en una transacción:
  *   - alter-transactions.sql → transactions: to_currency, to_amount, rate, status
  *   - alter-users.sql        → users: first_name, last_name, dni (+ índice único)
- * Son idempotentes (ADD COLUMN IF NOT EXISTS / CREATE ... IF NOT EXISTS),
+ *   - alter-goals.sql        → goals: tabla de metas de viaje
+ *   - alter-rate-alerts.sql  → rate_alerts: tabla de alertas de tasa
+ *   - alter-user-role.sql    → users: role ('user'|'admin', default 'user')
+ * Todas son idempotentes (ADD COLUMN IF NOT EXISTS / CREATE ... IF NOT EXISTS),
  * por eso se pueden re-ejecutar sin romper nada.
  * Uso:  DATABASE_URL=...  npm run db:alter
  * La conexión sale de backend/.env (ver .env.example).
@@ -21,6 +24,18 @@ const ALTERS: { file: string; note: string }[] = [
   {
     file: "alter-users.sql",
     note: "users: first_name, last_name, dni (indice unico)",
+  },
+  {
+    file: "alter-goals.sql",
+    note: "goals: tabla de metas de viaje",
+  },
+  {
+    file: "alter-rate-alerts.sql",
+    note: "rate_alerts: tabla de alertas de tasa",
+  },
+  {
+    file: "alter-user-role.sql",
+    note: "users: role ('user'|'admin', default 'user')",
   },
 ];
 
