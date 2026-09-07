@@ -1,3 +1,9 @@
+/**
+ * Rol del usuario en la app. `admin` habilita el panel administrativo
+ * (middleware `requireAdmin` de P3); el registro siempre crea 'user'.
+ */
+export type UserRole = "user" | "admin";
+
 export interface User {
   id: number;
   email: string;
@@ -5,6 +11,7 @@ export interface User {
   firstName?: string;
   lastName?: string;
   dni?: string;
+  role: UserRole;
   createdAt: string;
 }
 
@@ -14,6 +21,7 @@ export interface PublicUser {
   firstName?: string;
   lastName?: string;
   dni?: string;
+  role?: UserRole;
 }
 
 export interface CreateUserInput {
