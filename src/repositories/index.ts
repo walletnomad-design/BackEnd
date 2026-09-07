@@ -34,3 +34,14 @@ export {
   addToGoalAmount,
   deleteGoal,
 } from "./goal.repository";
+
+export {
+  countUsers,
+  countUsersByRole,
+  countTransactions,
+  sumVolumeByCurrency,
+  countTransactionsByType,
+  countRateAlertsByStatus,
+  countGoals,
+  countCompletedGoals,
+} from "./admin.repository";
