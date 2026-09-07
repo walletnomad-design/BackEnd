@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS users (
   first_name VARCHAR(120),
   last_name  VARCHAR(120),
   dni        VARCHAR(20)  UNIQUE,
+  role       VARCHAR(5)   NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'admin')),
   created_at TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
 
