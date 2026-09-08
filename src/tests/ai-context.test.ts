@@ -97,9 +97,9 @@ describe("ai-context.service", () => {
     expect("password" in context.user).toBe(false);
 
     expect(context.balances).toEqual([
-      { currency: "COP", amount: 2000000 },
-      { currency: "EUR", amount: 500 },
-      { currency: "USD", amount: 1000 },
+      { currency: "COP", amount: 0 },
+      { currency: "EUR", amount: 0 },
+      { currency: "USD", amount: 0 },
     ]);
 
     expect(context.recentTransactions.length).toBeGreaterThan(0);

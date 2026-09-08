@@ -3,9 +3,9 @@ import { pool } from "../db/connection";
 import type { Queryable } from "./queryable";
 
 export const INITIAL_BALANCES: { currency: Currency; amount: number }[] = [
-  { currency: "USD", amount: 1000 },
-  { currency: "EUR", amount: 500 },
-  { currency: "COP", amount: 2000000 },
+  { currency: "USD", amount: 0 },
+  { currency: "EUR", amount: 0 },
+  { currency: "COP", amount: 0 },
 ];
 
 interface BalanceRow {

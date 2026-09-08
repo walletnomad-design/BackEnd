@@ -58,26 +58,31 @@ CREATE INDEX IF NOT EXISTS idx_balances_wallet_id ON balances (wallet_id);
 -- columnas y solo se AGREGAN las que faltan para el Sprint 2:
 --   to_currency (moneda destino), to_amount (monto destino), rate (tasa),
 --   status (estado). Las columnas nuevas son NULLABLE a propósito para no
--- romper el historial de Sprint 1 (las operaciones viejas no las tenían).
+--   romper el historial de Sprint 1 (las operaciones viejas no las tenían).
+-- Sprint 3 (depósitos y transferencias): `to_user_id` apunta al destinatario
+-- de una transferencia (NULL para el resto); así el histórico de cada usuario
+-- mira user_id OR to_user_id.
 -- El frontend no crea transacciones libres: se generan automáticamente al
--- completarse una compra/venta/intercambio (exchange).
+-- completarse una compra/venta/intercambio (exchange), depósito o transferencia.
 CREATE TABLE IF NOT EXISTS transactions (
   id          SERIAL PRIMARY KEY,
   user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   wallet_id   INTEGER NOT NULL REFERENCES wallets(id) ON DELETE CASCADE,
-  type        VARCHAR(20) NOT NULL,                              -- buy | sell | exchange
+  to_user_id  INTEGER REFERENCES users(id) ON DELETE SET NULL,             -- destinatario en transferencias
+  type        VARCHAR(20) NOT NULL,          -- buy | sell | exchange | deposit | transfer
   currency    VARCHAR(3)  NOT NULL CHECK (currency IN ('USD','EUR','COP')), -- moneda origen
-  amount      NUMERIC(18,2) NOT NULL,                            -- monto origen
+  amount      NUMERIC(18,2) NOT NULL,        -- monto origen
   to_currency VARCHAR(3)  CHECK (to_currency IN ('USD','EUR','COP')),   -- moneda destino
-  to_amount   NUMERIC(18,2),                                     -- monto destino
-  rate        NUMERIC(18,6),                                     -- tasa aplicada origen -> destino
-  status      VARCHAR(20) NOT NULL DEFAULT 'completed',          -- completed | failed
+  to_amount   NUMERIC(18,2),                 -- monto destino
+  rate        NUMERIC(18,6),                 -- tasa aplicada origen -> destino
+  status      VARCHAR(20) NOT NULL DEFAULT 'completed',  -- completed | failed
   created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 -- Índices de búsqueda frecuente: findTransactionsByUserId y por wallet.
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions (user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_wallet_id ON transactions (wallet_id);
+CREATE INDEX IF NOT EXISTS idx_transactions_to_user_id ON transactions (to_user_id);
 
 -- Rate alerts / Alertas de tasa (Sprint 2 · P2).
 -- El usuario pide "avisame cuando 1 USD sea >= 0.90 EUR":

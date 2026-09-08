@@ -56,9 +56,9 @@ describe("balance.service", () => {
   it("getBalancesByWalletId devuelve solo { currency, amount }", async () => {
     const balances = await getBalancesByWalletId(1, db);
     expect(balances).toHaveLength(3);
-    expect(balances[0]).toEqual({ currency: "COP", amount: 2000000 });
-    expect(balances[1]).toEqual({ currency: "EUR", amount: 500 });
-    expect(balances[2]).toEqual({ currency: "USD", amount: 1000 });
+    expect(balances[0]).toEqual({ currency: "COP", amount: 0 });
+    expect(balances[1]).toEqual({ currency: "EUR", amount: 0 });
+    expect(balances[2]).toEqual({ currency: "USD", amount: 0 });
   });
 
   it("balanceService.getBalancesByWalletId funciona como objeto de contrato", async () => {

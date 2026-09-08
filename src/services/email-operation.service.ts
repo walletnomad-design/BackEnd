@@ -8,6 +8,8 @@ const TYPE_LABELS: Record<OperationEmailData["type"], string> = {
   buy: "Compraste",
   sell: "Vendiste",
   exchange: "Intercambiaste",
+  deposit: "Depositaste",
+  transfer: "Transferiste",
 };
 
 /**

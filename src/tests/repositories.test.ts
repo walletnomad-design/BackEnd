@@ -86,9 +86,9 @@ describe("balance.repository", () => {
     expect(balances).toHaveLength(3);
     expect(balances.map((b) => b.currency)).toEqual(["COP", "EUR", "USD"]);
     expect(balances.map((b) => `${b.currency}:${b.amount}`)).toEqual([
-      "COP:2000000",
-      "EUR:500",
-      "USD:1000",
+      "COP:0",
+      "EUR:0",
+      "USD:0",
     ]);
   });
 
