@@ -1,6 +1,11 @@
 import type { Currency } from "./currency";
 
-export type TransactionType = "buy" | "sell" | "exchange";
+export type TransactionType =
+  | "buy"
+  | "sell"
+  | "exchange"
+  | "deposit"
+  | "transfer";
 export type TransactionStatus = "completed" | "failed";
 
 export interface Transaction {
@@ -14,6 +19,7 @@ export interface Transaction {
   toAmount: number;
   rate: number;
   status: TransactionStatus;
+  toUserId?: number;
   createdAt: string;
 }
 
@@ -27,4 +33,5 @@ export interface CreateTransactionInput {
   toAmount: number;
   rate: number;
   status: TransactionStatus;
+  toUserId?: number;
 }
