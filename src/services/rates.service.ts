@@ -39,12 +39,13 @@ export class RatesProviderError extends Error {
   }
 }
 
-const round = (n: number) => Math.round(n * 10000) / 10000;
+const round = (n: number) => Math.round(n * 100000000) / 100000000;
 
 const toRates = (
   base: Currency,
   raw: Record<string, string | number>
 ): Rates => {
+  const baseValue = Number(raw[base]);
   const rates = {} as Rates;
   for (const currency of SUPPORTED) {
     if (currency === base) {
@@ -52,7 +53,10 @@ const toRates = (
       continue;
     }
     const value = Number(raw[currency]);
-    rates[currency] = Number.isFinite(value) && value > 0 ? round(value) : 1;
+    const normalized =
+      Number.isFinite(baseValue) && baseValue > 0 ? value / baseValue : value;
+    rates[currency] =
+      Number.isFinite(normalized) && normalized > 0 ? round(normalized) : 1;
   }
   return rates;
 };
