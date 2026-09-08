@@ -2,15 +2,23 @@ import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
-import { createUser } from "../repositories";
+import {
+  createUser,
+  createWalletForUser,
+  createInitialBalances,
+  findWalletByUserId,
+  findBalancesByWalletId,
+} from "../repositories";
 import {
   createGoal,
   listGoalsByUserId,
   addContribution,
+  withdrawFromGoal,
   removeGoal,
   goalsService,
   GoalValidationError,
   GoalNotFoundError,
+  GoalInsufficientBalanceError,
 } from "../services/goals.service";
 import type { Queryable } from "../repositories/queryable";
 
@@ -28,6 +36,11 @@ beforeAll(async () => {
   const user2 = await createUser({ email: "goals2@x.com", password: "hash2" }, db);
   userId1 = user1.id;
   userId2 = user2.id;
+
+  const wallet1 = await createWalletForUser(user1.id, db);
+  const wallet2 = await createWalletForUser(user2.id, db);
+  await createInitialBalances(wallet1.id, db);
+  await createInitialBalances(wallet2.id, db);
 });
 
 afterAll(async () => {
@@ -181,5 +194,106 @@ describe("goals.service", () => {
     await expect(removeGoal(userId1, 999999, db)).rejects.toBeInstanceOf(
       GoalNotFoundError
     );
+  });
+
+  it("aporta descontando el balance real en la moneda de la meta", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Balance", currency: "USD", targetAmount: 1000 },
+      db
+    );
+    const wallet1 = await findWalletByUserId(userId1, db);
+
+    expect(wallet1).toBeDefined();
+
+    const before = await findBalancesByWalletId(wallet1!.id, db);
+    const usdBefore = before.find((b) => b.currency === "USD")?.amount ?? 0;
+
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 300 }, db);
+
+    const balances = await findBalancesByWalletId(wallet1!.id, db);
+    const usd = balances.find((b) => b.currency === "USD");
+    expect(usd?.amount).toBe(usdBefore - 300);
+  });
+
+  it("rechaza aporte sin saldo suficiente con el máximo disponible", async () => {
+    const goal = await createGoal(
+      { userId: userId2, name: "Meta Sin Fondos", currency: "USD", targetAmount: 50000 },
+      db
+    );
+    const wallet2 = await findWalletByUserId(userId2, db);
+    const balances = await findBalancesByWalletId(wallet2!.id, db);
+    const usd = balances.find((b) => b.currency === "USD");
+
+    await expect(
+      addContribution({ userId: userId2, goalId: goal.id, amount: 999999 }, db)
+    ).rejects.toMatchObject({ name: "GoalInsufficientBalanceError", available: usd?.amount });
+  });
+
+  it("retira desde la meta y acredita el balance de vuelta", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Retiro", currency: "EUR", targetAmount: 1000 },
+      db
+    );
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 200 }, db);
+
+    const wallet1 = await findWalletByUserId(userId1, db);
+    const afterContribution = await findBalancesByWalletId(wallet1!.id, db);
+    const eurAfterContribution = afterContribution.find((b) => b.currency === "EUR")?.amount ?? 0;
+
+    const afterWithdraw = await withdrawFromGoal(
+      { userId: userId1, goalId: goal.id, amount: 120 },
+      db
+    );
+
+    expect(afterWithdraw.currentAmount).toBe(80);
+    expect(afterWithdraw.progress).toBe(8);
+
+    const balances = await findBalancesByWalletId(wallet1!.id, db);
+    const eur = balances.find((b) => b.currency === "EUR");
+    // retirar 120 de la meta suma ese monto de vuelta al balance en EUR
+    expect(eur?.amount).toBe(eurAfterContribution + 120);
+  });
+
+  it("rechaza retiro mayor a lo ahorrado en la meta", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Retiro Max", currency: "COP", targetAmount: 10000 },
+      db
+    );
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 50 }, db);
+
+    await expect(
+      withdrawFromGoal({ userId: userId1, goalId: goal.id, amount: 500 }, db)
+    ).rejects.toBeInstanceOf(GoalValidationError);
+  });
+
+  it("no retira de una meta ajena", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Ajena Retiro", currency: "USD", targetAmount: 100 },
+      db
+    );
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 20 }, db);
+
+    await expect(
+      withdrawFromGoal({ userId: userId2, goalId: goal.id, amount: 10 }, db)
+    ).rejects.toBeInstanceOf(GoalNotFoundError);
+  });
+
+  it("hace rollback si el aporte falla por saldo insuficiente (no descuenta)", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Rollback", currency: "USD", targetAmount: 100000 },
+      db
+    );
+    const wallet1 = await findWalletByUserId(userId1, db);
+    const before = await findBalancesByWalletId(wallet1!.id, db);
+    const usdBefore = before.find((b) => b.currency === "USD")?.amount;
+
+    await expect(
+      addContribution({ userId: userId1, goalId: goal.id, amount: 999999 }, db)
+    ).rejects.toBeInstanceOf(GoalInsufficientBalanceError);
+
+    const after = await findBalancesByWalletId(wallet1!.id, db);
+    const usdAfter = after.find((b) => b.currency === "USD")?.amount;
+    expect(usdAfter).toBe(usdBefore);
+    expect(goal.currentAmount).toBe(0);
   });
 });
