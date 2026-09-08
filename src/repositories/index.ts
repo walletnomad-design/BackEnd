@@ -32,6 +32,7 @@ export {
   findGoalsByUserId,
   findGoalById,
   addToGoalAmount,
+  subtractFromGoalAmount,
   deleteGoal,
 } from "./goal.repository";
 
