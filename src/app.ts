@@ -9,6 +9,8 @@ import exchangeRoutes from "./routes/exchange.routes";
 import goalRoutes from "./routes/goal.routes";
 import rateAlertRoutes from "./routes/rate-alert.routes";
 import adminRoutes from "./routes/admin.routes";
+import depositRoutes from "./routes/deposit.routes";
+import transferRoutes from "./routes/transfer.routes";
 
 const app = express();
 
@@ -32,6 +34,8 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/goals", goalRoutes);
 app.use("/api/rate-alerts", rateAlertRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/deposits", depositRoutes);
+app.use("/api/transfers", transferRoutes);
 
 
 
