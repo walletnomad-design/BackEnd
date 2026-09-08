@@ -13,6 +13,7 @@ interface TransactionRow {
   to_amount: number;
   rate: number;
   status: string;
+  to_user_id: number | null;
   created_at: string | Date;
 }
 
@@ -27,6 +28,7 @@ const toTransaction = (row: TransactionRow): Transaction => ({
   toAmount: row.to_amount,
   rate: row.rate,
   status: row.status as Transaction["status"],
+  toUserId: row.to_user_id ?? undefined,
   createdAt: new Date(row.created_at).toISOString(),
 });
 
@@ -36,12 +38,12 @@ export const createTransaction = async (
 ): Promise<Transaction> => {
   const result = await db.query<TransactionRow>(
     `INSERT INTO transactions
-       (user_id, wallet_id, type, currency, amount, to_currency, to_amount, rate, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (user_id, wallet_id, type, currency, amount, to_currency, to_amount, rate, status, to_user_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING id, user_id, wallet_id, type,
                currency, to_currency,
                amount::float8 AS amount, to_amount::float8 AS to_amount,
-               rate::float8 AS rate, status, created_at`,
+               rate::float8 AS rate, status, to_user_id, created_at`,
     [
       data.userId,
       data.walletId,
@@ -52,6 +54,7 @@ export const createTransaction = async (
       data.toAmount,
       data.rate,
       data.status,
+      data.toUserId ?? null,
     ]
   );
   return toTransaction(result.rows[0]);
@@ -65,9 +68,9 @@ export const findTransactionsByUserId = async (
     `SELECT id, user_id, wallet_id, type,
             currency, to_currency,
             amount::float8 AS amount, to_amount::float8 AS to_amount,
-            rate::float8 AS rate, status, created_at
+            rate::float8 AS rate, status, to_user_id, created_at
      FROM transactions
-     WHERE user_id = $1
+     WHERE user_id = $1 OR to_user_id = $1
      ORDER BY created_at DESC`,
     [userId]
   );
