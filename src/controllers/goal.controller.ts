@@ -1,13 +1,16 @@
 import type { Request, Response } from "express";
+
 import type { Currency } from "../types";
 
 import {
   createGoal,
   listGoalsByUserId,
   addContribution,
+  withdrawFromGoal,
   removeGoal,
   GoalValidationError,
   GoalNotFoundError,
+  GoalInsufficientBalanceError,
 } from "../services/goals.service";
 
 const SUPPORTED_CURRENCIES: Currency[] = ["USD", "EUR", "COP"];
@@ -94,7 +97,7 @@ export const addContributionController = async (
   res: Response
 ): Promise<void> => {
   const userId = res.locals.userId;
-  const goalId = getGoalId( req.params.id);
+  const goalId = getGoalId(req.params.id);
   const { amount } = req.body;
 
   if (goalId === null || typeof amount !== "number") {
@@ -107,6 +110,64 @@ export const addContributionController = async (
 
   try {
     const goal = await addContribution({
+      userId,
+      goalId,
+      amount,
+    });
+
+    res.status(200).json({ goal });
+  } catch (error) {
+    if (error instanceof GoalValidationError) {
+      res.status(400).json({
+        error: "GOAL_VALIDATION_ERROR",
+        message: error.message,
+      });
+      return;
+    }
+
+    if (error instanceof GoalNotFoundError) {
+      res.status(404).json({
+        error: "GOAL_NOT_FOUND",
+        message: error.message,
+      });
+      return;
+    }
+
+    if (error instanceof GoalInsufficientBalanceError) {
+      res.status(409).json({
+        error: "INSUFFICIENT_BALANCE",
+        message: error.message,
+        currency: error.currency,
+        available: error.available,
+      });
+      return;
+    }
+
+    res.status(500).json({
+      error: "INTERNAL_ERROR",
+      message: "Error interno del servidor",
+    });
+  }
+};
+
+export const withdrawFromGoalController = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const userId = res.locals.userId;
+  const goalId = getGoalId(req.params.id);
+  const { amount } = req.body;
+
+  if (goalId === null || typeof amount !== "number") {
+    res.status(400).json({
+      error: "INVALID_INPUT",
+      message: "Datos del retiro inválidos",
+    });
+    return;
+  }
+
+  try {
+    const goal = await withdrawFromGoal({
       userId,
       goalId,
       amount,
