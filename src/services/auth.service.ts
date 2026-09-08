@@ -103,7 +103,7 @@ export const register = async (
 
     await client.query("COMMIT");
 
-    const token = generateToken(user.id);
+    const token = generateToken(user.id, user.role);
 
     return {
       token,
@@ -113,6 +113,7 @@ export const register = async (
         firstName: user.firstName,
         lastName: user.lastName,
         dni: user.dni,
+        role: user.role,
       },
     };
   } catch (error) {
@@ -139,7 +140,7 @@ export const login = async (email: string, password: string) => {
     throw new InvalidCredentialsError();
   }
 
-  const token = generateToken(user.id);
+  const token = generateToken(user.id, user.role);
 
   return {
     token,
@@ -149,6 +150,7 @@ export const login = async (email: string, password: string) => {
       firstName: user.firstName,
       lastName: user.lastName,
       dni: user.dni,
+      role: user.role,
     },
   };
 };
