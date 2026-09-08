@@ -8,6 +8,7 @@ import {
   createInitialBalances,
   findWalletByUserId,
   findBalancesByWalletId,
+  addToBalance,
 } from "../repositories";
 import {
   createGoal,
@@ -41,6 +42,12 @@ beforeAll(async () => {
   const wallet2 = await createWalletForUser(user2.id, db);
   await createInitialBalances(wallet1.id, db);
   await createInitialBalances(wallet2.id, db);
+  await addToBalance(wallet1.id, "USD", 5000, db);
+  await addToBalance(wallet1.id, "EUR", 5000, db);
+  await addToBalance(wallet1.id, "COP", 5000000, db);
+  await addToBalance(wallet2.id, "USD", 5000, db);
+  await addToBalance(wallet2.id, "EUR", 5000, db);
+  await addToBalance(wallet2.id, "COP", 5000000, db);
 });
 
 afterAll(async () => {
