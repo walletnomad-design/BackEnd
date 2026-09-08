@@ -65,6 +65,46 @@ describe("rates.service", () => {
     expect(fetcher).not.toHaveBeenCalled(); // sin key nunca consulta el proveedor
   });
 
+  it("normaliza el fallback a la base pedida (EUR -> tasas relativas a EUR)", async () => {
+    const { getRates } = mod;
+    const fetcher = makeFetcher(() => mockProviderResponse({}));
+
+    const res = await getRates("EUR", { fetcher });
+
+    expect(res.source).toBe("fallback");
+    expect(res.rates.EUR).toBe(1);
+    // FALLBACK: 1 USD = 0.93 EUR / 4000 COP -> expresado en EUR: 1 EUR = 1.075 USD y 4301.08 COP
+    expect(res.rates.USD).toBeCloseTo(1 / 0.93, 3);
+    expect(res.rates.COP).toBeCloseTo(4000 / 0.93, 1);
+  });
+
+  it("normaliza el fallback a la base pedida (COP -> tasas relativas a COP)", async () => {
+    const { getRates } = mod;
+    const fetcher = makeFetcher(() => mockProviderResponse({}));
+
+    const res = await getRates("COP", { fetcher });
+
+    expect(res.source).toBe("fallback");
+    expect(res.rates.COP).toBe(1);
+    // FALLBACK: 1 USD = 4000 COP -> 1 COP = 0.00025 USD y 0.0002325 EUR
+    expect(res.rates.USD).toBeCloseTo(1 / 4000, 6);
+    expect(res.rates.EUR).toBeCloseTo(0.93 / 4000, 6);
+  });
+
+  it("no altera las tasas del proveedor cuando ya estan relativas a la base", async () => {
+    const { getRates } = mod;
+    const fetcher = makeFetcher(() =>
+      mockProviderResponse({ base: "EUR", rates: { USD: "1.09", EUR: "1", COP: "4350" } })
+    );
+
+    const res = await getRates("EUR", { apiKey: "test-key", fetcher });
+
+    expect(res.source).toBe("currencyfreaks");
+    expect(res.rates.USD).toBe(1.09);
+    expect(res.rates.EUR).toBe(1);
+    expect(res.rates.COP).toBe(4350);
+  });
+
   it("cae al fallback cuando el proveedor responde con error", async () => {
     const { getRates } = mod;
     const fetcher = makeFetcher(() => new Response("error", { status: 500 }));
