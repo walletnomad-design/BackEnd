@@ -21,6 +21,7 @@ export interface TransactionCountByType {
  */
 export interface AdminMetrics {
   totalUsers: number;
+  usersWithOperations: number;
   adminUsers: number;
   totalTransactions: number;
   volumeByCurrency: TransactionVolumeByCurrency[];
