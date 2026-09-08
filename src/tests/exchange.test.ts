@@ -3,7 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import fs from "node:fs";
 import path from "node:path";
 import { beforeAll, afterAll, describe, it, expect } from "vitest";
-import { createUser, createWalletForUser, createInitialBalances, findBalancesByWalletId } from "../repositories";
+import { createUser, createWalletForUser, createInitialBalances, findBalancesByWalletId, addToBalance } from "../repositories";
 import {
   exchange,
   exchangeService,
@@ -44,6 +44,9 @@ beforeAll(async () => {
   const user = await createUser({ email: "exch@x.com", password: "hash1" }, db);
   const wallet = await createWalletForUser(user.id, db);
   await createInitialBalances(wallet.id, db);
+  await addToBalance(wallet.id, "USD", 1000, db);
+  await addToBalance(wallet.id, "EUR", 500, db);
+  await addToBalance(wallet.id, "COP", 2000000, db);
 });
 
 afterAll(async () => {
