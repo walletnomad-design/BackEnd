@@ -32,3 +32,9 @@ export interface AddToGoalInput {
   goalId: number;
   amount: number;
 }
+
+export interface WithdrawGoalInput {
+  userId: number;
+  goalId: number;
+  amount: number;
+}

@@ -100,6 +100,31 @@ export const addToGoalAmount = async (
   return result.rows[0] ? toGoal(result.rows[0]) : null;
 };
 
+/**
+ * Resta `amount` del ahorro actual de la meta, SOLO si la meta pertenece al
+ * `userId` dado y el ahorro alcanza para el retiro (current_amount >= amount).
+ * Devuelve null si no existe, no es del usuario o el monto supera lo ahorrado:
+ * la capa de servicio valida el negocio antes y traduce el caso.
+ */
+export const subtractFromGoalAmount = async (
+  goalId: number,
+  userId: number,
+  amount: number,
+  db: Queryable = pool
+): Promise<Goal | null> => {
+  const result = await db.query<GoalRow>(
+    `UPDATE goals
+     SET current_amount = current_amount - $3, updated_at = NOW()
+     WHERE id = $1 AND user_id = $2 AND current_amount >= $3
+     RETURNING id, user_id, name, currency,
+               target_amount::float8 AS target_amount,
+               current_amount::float8 AS current_amount,
+               created_at, updated_at`,
+    [goalId, userId, amount]
+  );
+  return result.rows[0] ? toGoal(result.rows[0]) : null;
+};
+
 export const deleteGoal = async (
   goalId: number,
   userId: number,
