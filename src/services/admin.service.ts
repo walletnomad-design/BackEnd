@@ -9,6 +9,7 @@ import {
   countTransactionsByType,
   countUsers,
   countUsersByRole,
+  countUsersWithOperations,
   sumVolumeByCurrency,
 } from "../repositories";
 
@@ -24,6 +25,7 @@ export const getAdminMetrics = async (
 ): Promise<AdminMetrics> => {
   const [
     totalUsers,
+    usersWithOperations,
     adminUsers,
     totalTransactions,
     volumeByCurrency,
@@ -34,6 +36,7 @@ export const getAdminMetrics = async (
     completedGoals,
   ] = await Promise.all([
     countUsers(db),
+    countUsersWithOperations(db),
     countUsersByRole("admin", db),
     countTransactions(db),
     sumVolumeByCurrency(db),
@@ -46,6 +49,7 @@ export const getAdminMetrics = async (
 
   return {
     totalUsers,
+    usersWithOperations,
     adminUsers,
     totalTransactions,
     volumeByCurrency,
