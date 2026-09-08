@@ -37,6 +37,7 @@ export {
 
 export {
   countUsers,
+  countUsersWithOperations,
   countUsersByRole,
   countTransactions,
   sumVolumeByCurrency,

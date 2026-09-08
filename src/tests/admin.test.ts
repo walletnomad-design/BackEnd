@@ -83,6 +83,11 @@ describe("admin.service", () => {
     expect(metrics.adminUsers).toBe(1);
   });
 
+  it("cuenta usuarios con al menos una operacion", async () => {
+    const metrics = await getAdminMetrics(db);
+    expect(metrics.usersWithOperations).toBe(2);
+  });
+
   it("agrega transacciones por moneda origen y por tipo", async () => {
     const metrics = await getAdminMetrics(db);
 
