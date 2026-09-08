@@ -27,6 +27,14 @@ export const countUsers = (db: Queryable = pool): Promise<number> =>
     .query<CountRow>("SELECT COUNT(*)::int AS count FROM users")
     .then((r) => toCount(r.rows));
 
+/** Usuarios que tienen al menos una transacción registrada. */
+export const countUsersWithOperations = (db: Queryable = pool): Promise<number> =>
+  db
+    .query<CountRow>(
+      "SELECT COUNT(DISTINCT user_id)::int AS count FROM transactions"
+    )
+    .then((r) => toCount(r.rows));
+
 export const countUsersByRole = (
   role: "user" | "admin",
   db: Queryable = pool
