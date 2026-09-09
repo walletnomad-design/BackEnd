@@ -17,17 +17,25 @@ export const transferController = async (
   const { toEmail, currency, amount } = req.body;
 
   try {
-    const transaction = await transfer({
-      userId,
-      toEmail,
-      currency: currency as Currency,
-      amount,
-    });
-    
-    await sendTransactionEmail(userId, transaction);
-    
-    res.status(201).json({ transaction });
-    
+      const transaction = await transfer({
+        userId,
+        toEmail,
+        currency: currency as Currency,
+        amount,
+      });
+
+      await sendTransactionEmail(userId, transaction, "sent");
+
+      if (transaction.toUserId) {
+        await sendTransactionEmail(
+          transaction.toUserId,
+          transaction,
+          "received"
+        );
+      }
+
+      res.status(201).json({ transaction });
+
   } catch (error) {
     if (error instanceof InvalidMoneyOpError) {
       res.status(400).json({
