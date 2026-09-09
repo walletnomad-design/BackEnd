@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import type { Currency, TransactionType } from "../types";
+import { sendTransactionEmail } from "../services/email-notification.service";
 
 import {
   exchange,
@@ -35,15 +36,20 @@ export const exchangeCurrency = async (
   }
 
   try {
-    const transaction = await exchange({
-      userId,
-      type: type as TransactionType,
-      fromCurrency: fromCurrency as Currency,
-      toCurrency: toCurrency as Currency,
-      amount,
-    });
+      const transaction = await exchange({
+        userId,
+        type: type as TransactionType,
+        fromCurrency: fromCurrency as Currency,
+        toCurrency: toCurrency as Currency,
+        amount,
+      });
 
-    res.status(200).json({ transaction });
+      if (type === "exchange") {
+        await sendTransactionEmail(userId, transaction);
+      }
+
+      res.status(200).json({ transaction });
+      
   } catch (error) {
     if (error instanceof InvalidExchangeError) {
       res.status(400).json({

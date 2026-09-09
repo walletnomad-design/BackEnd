@@ -1,5 +1,6 @@
 import type { Request, Response } from "express";
 import type { Currency } from "../types";
+import { sendTransactionEmail } from "../services/email-notification.service";
 
 import {
   deposit,
@@ -19,6 +20,8 @@ export const depositController = async (
       currency: currency as Currency,
       amount,
     });
+
+  await sendTransactionEmail(userId, transaction);
 
     res.status(201).json({ transaction });
   } catch (error) {
