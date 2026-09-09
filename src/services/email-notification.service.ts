@@ -4,7 +4,8 @@ import { buildOperationEmailData } from "./email-operation.service";
 
 export const sendTransactionEmail = async (
   userId: number,
-  transaction: Transaction
+  transaction: Transaction,
+  perspective: "sent" | "received" = "sent"
 ): Promise<void> => {
   try {
     const functionUrl = process.env.EMAIL_FUNCTION_URL;
@@ -37,13 +38,21 @@ export const sendTransactionEmail = async (
         fromCurrency: data.fromCurrency,
         toAmount: data.toAmount,
         toCurrency: data.toCurrency,
+        rate: data.rate,
         timestamp: data.createdAt,
+        perspective,
       }),
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error("SES: error desde Vercel:", response.status, errorText);
+
+      console.error(
+        "SES: error desde Vercel:",
+        response.status,
+        errorText
+      );
+
       return;
     }
 
