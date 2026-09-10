@@ -303,4 +303,61 @@ describe("goals.service", () => {
     expect(usdAfter).toBe(usdBefore);
     expect(goal.currentAmount).toBe(0);
   });
+
+  it("devuelve el monto reservado al balance al eliminar la meta", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Devolucion", currency: "USD", targetAmount: 1000 },
+      db
+    );
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 350 }, db);
+
+    const wallet1 = await findWalletByUserId(userId1, db);
+    const before = await findBalancesByWalletId(wallet1!.id, db);
+    const usdBefore = before.find((b) => b.currency === "USD")?.amount ?? 0;
+
+    await removeGoal(userId1, goal.id, db);
+
+    const after = await findBalancesByWalletId(wallet1!.id, db);
+    const usdAfter = after.find((b) => b.currency === "USD")?.amount ?? 0;
+    expect(usdAfter).toBe(usdBefore + 350);
+
+    const remaining = await listGoalsByUserId(userId1, db);
+    expect(remaining.some((g) => g.id === goal.id)).toBe(false);
+  });
+
+  it("elimina una meta sin ahorro sin tocar el balance", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Vacia", currency: "EUR", targetAmount: 500 },
+      db
+    );
+    const wallet1 = await findWalletByUserId(userId1, db);
+    const before = await findBalancesByWalletId(wallet1!.id, db);
+    const eurBefore = before.find((b) => b.currency === "EUR")?.amount ?? 0;
+
+    await removeGoal(userId1, goal.id, db);
+
+    const after = await findBalancesByWalletId(wallet1!.id, db);
+    const eurAfter = after.find((b) => b.currency === "EUR")?.amount ?? 0;
+    expect(eurAfter).toBe(eurBefore);
+  });
+
+  it("no devuelve saldo al eliminar una meta ajena", async () => {
+    const goal = await createGoal(
+      { userId: userId1, name: "Meta Ajena con Saldo", currency: "USD", targetAmount: 1000 },
+      db
+    );
+    await addContribution({ userId: userId1, goalId: goal.id, amount: 100 }, db);
+
+    const wallet2 = await findWalletByUserId(userId2, db);
+    const before = await findBalancesByWalletId(wallet2!.id, db);
+    const usdBefore = before.find((b) => b.currency === "USD")?.amount ?? 0;
+
+    await expect(removeGoal(userId2, goal.id, db)).rejects.toBeInstanceOf(
+      GoalNotFoundError
+    );
+
+    const after = await findBalancesByWalletId(wallet2!.id, db);
+    const usdAfter = after.find((b) => b.currency === "USD")?.amount ?? 0;
+    expect(usdAfter).toBe(usdBefore);
+  });
 });
