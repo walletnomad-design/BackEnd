@@ -7,7 +7,7 @@ API de NomadWallet (Proyecto Final · Soy Henry). Backend en **Express + TypeScr
 - **Express 5** + **TypeScript** (strict, sin `any`)
 - **PostgreSQL** hosteado en **Railway** (`pg`), migraciones con SQL puro (`tsx`)
 - **Vitest** + **PGlite** (PostgreSQL en memoria) para la suite de tests sin base real
-- **CurrencyFreaks** (tasas reales) y **Google Gemini** (chatbot Nomad AI) como proveedores externos
+- **CurrencyFreaks** (tasas reales), **Google Gemini** (chatbot Nomad AI) y **AWS SES** (emails de confirmación) como proveedores externos
 
 ## Estructura
 
@@ -17,11 +17,12 @@ src/
   types/         Tipos de dominio y DTOs de respuesta (contrato con P1/P3)
   repositories/  Consultas SQL por entidad (funciones congeladas del contrato)
   services/      Reglas de negocio (auth, wallet, balance, transactions, exchange,
-                 rates, goals, rate-alert, money-ops, email-operation, ai-context, admin)
+                 rates, goals, rate-alert, money-ops, email-operation,
+                 email-notification, ai-context, admin)
   controllers/   Capa HTTP de la API
   routes/        Definición de rutas (montadas en app.ts)
   middlewares/   requireAuth (JWT) y requireAdmin
-  tests/         Suite Vitest (102 tests) + setup con PGlite
+  tests/         Suite Vitest (105 tests) + setup con PGlite
 ```
 
 ## Puesta en marcha
@@ -35,6 +36,14 @@ src/
    CURRENCYFREAKS_API_KEY=...      # tasas reales (plan free: base USD)
    GEMINI_API_KEY=...              # chatbot Nomad AI (gemini-2.5-flash)
    PORT=3000                       # opcional, default 3000
+
+   # Email de confirmación (AWS SES vía Vercel Function)
+   AWS_REGION=...                  # región de SES (ej. us-east-1)
+   AWS_ACCESS_KEY_ID=...
+   AWS_SECRET_ACCESS_KEY=...
+   SES_FROM_EMAIL=...              # remitente validado en SES
+   EMAIL_FUNCTION_URL=...          # URL de la Vercel Function /api/send-transaction-email
+   EMAIL_FUNCTION_SECRET=...       # secreto compartido con la Vercel Function
    ```
 
    > `.env` está en `.gitignore` y **nunca se sube**. En el repositorio solo vive `.env.example` con los nombres de variables, sin valores reales.
@@ -51,7 +60,7 @@ src/
    ```
    npm run dev          # arranca la API (tsx)
    npm run typecheck    # TypeScript estricto
-   npm test             # suite Vitest (102 tests, PGlite)
+   npm test             # suite Vitest (105 tests, PGlite)
    npm run build        # compila a dist/
    ```
 
@@ -69,7 +78,7 @@ src/
 | GET/POST | `/api/goals` | JWT | Listar / crear metas de viaje |
 | POST | `/api/goals/:id/contributions` | JWT | Aportar saldo real a una meta |
 | POST | `/api/goals/:id/withdrawals` | JWT | Retirar de una meta |
-| DELETE | `/api/goals/:id` | JWT | Eliminar meta |
+| DELETE | `/api/goals/:id` | JWT | Eliminar meta (devuelve el saldo reservado al balance) |
 | GET/POST | `/api/rate-alerts` | JWT | Listar / crear alertas de tasa |
 | POST | `/api/rate-alerts/evaluate` | JWT | Evaluar alertas del usuario contra la tasa actual |
 | POST | `/api/rate-alerts/:id/reactivate` | JWT | Rearmar una alerta disparada |
@@ -77,7 +86,7 @@ src/
 | POST | `/api/deposits` | JWT | Depositar saldo a la billetera |
 | POST | `/api/transfers` | JWT | Transferir a otro usuario |
 | GET | `/api/admin/summary` | admin | Métricas del panel administrativo |
-| POST | `/api/ai/chat` | JWT | Chatbot Nomad AI (definido en `ai.routes.ts`; **montaje pendiente en `app.ts`**) |
+| POST | `/api/ai/chat` | JWT | Chatbot Nomad AI (Gemini con contexto del usuario) |
 
 > `GET /` responde `{ message: "NomadWallet API funcionando" }` como health check.
 
@@ -184,12 +193,13 @@ El dominio se modela en **seis tablas**: `users`, `wallets`, `balances`, `transa
 | **Consultas parametrizadas `$1, $2…`** | Toda consulta se construye con parámetros posicionales; **nunca** concatenando datos del usuario → protección contra inyección SQL. |
 | **Errores con `{ error, message }`** | Formato único de errores de la API (contrato); los errores de negocio (saldo insuficiente, wallet inexistente, etc.) son clases tipadas que el controller traduce a códigos HTTP. |
 | **Transacciones con `BEGIN/COMMIT/ROLLBACK`** | Compra/venta, aportes, depósitos y transferencias actualizan saldos y crean la transacción en el mismo bloque: nunca queda a medias. |
+| **Eliminar una meta devuelve su saldo (transacción atómica)** | La devolución del monto reservado al balance y el borrado corren en el mismo bloque `BEGIN/COMMIT`: si algo falla, no queda ni la devolución ni la eliminación a medias (anexo de Mejoras de Metas). |
 | **Capa por responsabilidad** | Controller (HTTP) → Service (reglas) → Repository (SQL). La capa HTTP no toca SQL directo. |
 | **Tasas siempre reales con base USD** | CurrencyFreaks (plan free) solo calcula con base USD: se consulta así siempre y el servicio normaliza a la moneda pedida (`normalized[target] = usdRates[target] / usdRates[base]`), con caché de 5 min y fallback de emergencia. |
 
 ## Tests
 
-Suite Vitest sobre repositorios y servicios (**102 tests** en 11 archivos) ejecutándose contra **PGlite**, un PostgreSQL real en memoria que carga el mismo `schema.sql`, sin depender de Railway ni credenciales.
+Suite Vitest sobre repositorios y servicios (**105 tests** en 11 archivos) ejecutándose contra **PGlite**, un PostgreSQL real en memoria que carga el mismo `schema.sql`, sin depender de Railway ni credenciales.
 
 ```
 npm test      # suite completa
