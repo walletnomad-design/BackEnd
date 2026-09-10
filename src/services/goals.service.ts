@@ -206,11 +206,19 @@ export const removeGoal = async (
   goalId: number,
   db: Queryable = pool
 ): Promise<void> => {
-  const goal = await findGoalById(goalId, db);
-  if (!goal || goal.userId !== userId) {
-    throw new GoalNotFoundError(goalId);
-  }
-  await deleteGoalRow(goalId, userId, db);
+  return withTransaction(db, async (client) => {
+    const goal = await findGoalById(goalId, client);
+    if (!goal || goal.userId !== userId) {
+      throw new GoalNotFoundError(goalId);
+    }
+
+    if (goal.currentAmount > 0) {
+      const wallet = await getWalletByUserId(userId, client);
+      await addToBalance(wallet.id, goal.currency, goal.currentAmount, client);
+    }
+
+    await deleteGoalRow(goalId, userId, client);
+  });
 };
 
 export const goalsService = {
